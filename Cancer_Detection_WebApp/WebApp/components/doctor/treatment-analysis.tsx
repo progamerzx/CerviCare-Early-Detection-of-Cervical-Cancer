@@ -23,6 +23,7 @@ export default function TreatmentAnalysis() {
   const [analysisId, setAnalysisId] = useState<string | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [riskLevel, setRiskLevel] = useState<"low" | "medium" | "high" | null>(null)
+  const [aiResult, setAiResult] = useState<string | null>(null)
   const [aiSummary, setAiSummary] = useState<string>("")
   const [doctorFeedback, setDoctorFeedback] = useState("")
   const [nextSteps, setNextSteps] = useState("")
@@ -42,6 +43,7 @@ export default function TreatmentAnalysis() {
         setAnalysisId(null)
         setImageUrl(null)
         setRiskLevel(null)
+        setAiResult(null)
         setAiSummary("")
         toast({ title: "Not found", description: "No patient found with that Patient ID." })
         return
@@ -55,6 +57,7 @@ export default function TreatmentAnalysis() {
         setAnalysisId(null)
         setImageUrl(null)
         setRiskLevel(null)
+        setAiResult(null)
         setAiSummary("")
         toast({
           title: "Access denied",
@@ -72,9 +75,10 @@ export default function TreatmentAnalysis() {
       setPatientHumanId(patient.patientId)
       if (latest) {
         setAnalysisId(latest.id!)
-        setImageUrl(latest.imageUrl)
-        setRiskLevel(latest.riskLevel)
-        setAiSummary(latest.analysis)
+        setImageUrl(latest.imageUrl ?? null)
+        setRiskLevel(latest.riskLevel ?? null)
+        setAiResult(latest.result || (latest.riskLevel === "high" ? "abnormal" : latest.riskLevel === "medium" ? "mild" : "normal"))
+        setAiSummary(latest.analysis ?? "")
         // Prefill prior doctor feedback if exists
         setDoctorFeedback(latest.doctorFeedback || "")
         setNextSteps(latest.nextSteps || "")
@@ -82,6 +86,7 @@ export default function TreatmentAnalysis() {
         setAnalysisId(null)
         setImageUrl(null)
         setRiskLevel(null)
+        setAiResult(null)
         setAiSummary("")
       }
     } catch (e: any) {
@@ -188,14 +193,14 @@ export default function TreatmentAnalysis() {
                     </div>
                   )}
 
-                  {riskLevel && (
+                  {aiResult && (
                     <div className="flex items-center gap-2">
-                      {riskLevel === "low" ? (
+                      {aiResult.toLowerCase() === "normal" ? (
                         <CheckCircle className="h-4 w-4 text-green-600" />
                       ) : (
                         <AlertTriangle className="h-4 w-4 text-red-600" />
                       )}
-                      <span className="text-sm font-medium">{riskLevel === "low" ? "Normal" : "Abnormal"}</span>
+                      <span className="text-sm font-medium capitalize">{aiResult}</span>
                     </div>
                   )}
                   {aiSummary && <p className="text-sm bg-gray-50 p-3 rounded">{aiSummary}</p>}

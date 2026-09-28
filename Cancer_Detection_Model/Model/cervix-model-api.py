@@ -10,26 +10,19 @@ from datetime import datetime
 import requests
 import base64
 
-# ------------------------------------------------------------
-# Initialize Flask App
-# ------------------------------------------------------------
 app = Flask(__name__)
 CORS(app)
 
-# ------------------------------------------------------------
-# Model Configuration
-# ------------------------------------------------------------
 MODEL_URL = os.getenv(
     "MODEL_URL",
     "https://huggingface.co/VedantJainnnn/cervixnet121/resolve/main/final_cervix_model_optimized.keras"
 )
+
 MODEL_LOCAL = "final_cervix_model_optimized.keras"
 THRESHOLD = float(os.getenv("PREDICTION_THRESHOLD", "0.55"))
 IMG_SIZE = (288, 288)
 
-# ------------------------------------------------------------
-# Download model from Hugging Face if not exists
-# ------------------------------------------------------------
+
 if not os.path.exists(MODEL_LOCAL):
     try:
         print("⏳ Downloading model from Hugging Face...")
@@ -42,9 +35,7 @@ if not os.path.exists(MODEL_LOCAL):
     except Exception as e:
         print(f"❌ Failed to download model: {e}")
 
-# ------------------------------------------------------------
-# Load model
-# ------------------------------------------------------------
+
 try:
     model = tf.keras.models.load_model(MODEL_LOCAL, compile=False)
     print(f"✅ Model loaded successfully from {MODEL_LOCAL}")
@@ -52,9 +43,7 @@ except Exception as e:
     print(f"❌ Failed to load model: {e}")
     model = None
 
-# ------------------------------------------------------------
-# Image Preprocessing
-# ------------------------------------------------------------
+
 def preprocess_image(image_bytes):
     """Preprocess image for model inference."""
     try:
@@ -67,9 +56,7 @@ def preprocess_image(image_bytes):
     except Exception as e:
         raise ValueError(f"Image preprocessing failed: {str(e)}")
 
-# ------------------------------------------------------------
-# Prediction Logic
-# ------------------------------------------------------------
+
 def predict_cervix(image_bytes):
     """Run inference on cervix image."""
     if model is None:
@@ -90,9 +77,7 @@ def predict_cervix(image_bytes):
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
-# ------------------------------------------------------------
-# Routes
-# ------------------------------------------------------------
+
 @app.route("/", methods=["GET"])
 def root():
     """Root ping endpoint for Render health checks."""
@@ -113,14 +98,9 @@ def health():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    """Predict single cervix image.
-    
-    Accepts multipart/form-data with field name 'file'.
-    This matches the field name sent by the Next.js /api/predict route:
-        formData.append("file", blob, filename)
-    """
+   
     try:
-        # Accept 'file' field — sent by the Next.js backend
+       
         uploaded = request.files.get("file") or request.files.get("image")
         if uploaded is None:
             return jsonify({"error": "No image file provided. Expected field name: 'file'"}), 400
@@ -131,8 +111,7 @@ def predict():
         image_bytes = uploaded.read()
         result = predict_cervix(image_bytes)
 
-        # Return field names matching what Next.js /api/predict expects:
-        # { prediction, score, threshold, class }
+    
         return jsonify({
             "filename": uploaded.filename,
             "prediction": result["class"],
@@ -169,9 +148,7 @@ def predict_batch():
     except Exception as e:
         return jsonify({"error": f"Batch prediction failed: {str(e)}"}), 500
 
-# ------------------------------------------------------------
-# App Entry Point (Render / Local)
-# ------------------------------------------------------------
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     print(f"🚀 Starting CervixNet121 Flask server on port {port} (http://localhost:{port}) ...")
